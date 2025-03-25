@@ -7,11 +7,14 @@ from deep_translator import GoogleTranslator
 
 # 創建 Flask 應用實例
 app = Flask(__name__)
-CORS(app)  # 允許跨域請求
+
+# 修改 CORS 設定，明確允許所有來源
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 # 設定 JSON 檔案路徑
 #JSON_FILE_PATH = r"C:\Users\Henry\Desktop\test\chatbot-backend\output.json"
 JSON_FILE_PATH = os.path.join(os.path.dirname(__file__), "output.json")
+
 # 載入 JSON 資料
 def load_data():
     try:
@@ -312,8 +315,16 @@ def find_semantic_matches(query, language=None, top_n=3):
     
     return scored_items[:top_n]
 
-@app.route('/api/get_responses', methods=['POST'])
+@app.route('/api/get_responses', methods=['POST', 'OPTIONS'])
 def get_responses():
+    # 處理預檢請求
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        return response
+        
     data = request.json
     user_prompt = data.get('prompt', '').strip()
     language = data.get('language', '')
@@ -432,7 +443,9 @@ def get_responses():
         translated_response['original_language'] = match_lang
         translated_response['language'] = detected_lang
         
-        return jsonify([translated_response])
+        response = jsonify([translated_response])
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
     else:
         # 如果找不到匹配項，隨機選擇一個項目並翻譯
         try:
@@ -476,17 +489,31 @@ def get_responses():
                 translated_random['original_language'] = random_lang
                 translated_random['language'] = detected_lang
                 
-                return jsonify([translated_random])
+                response = jsonify([translated_random])
+                response.headers.add('Access-Control-Allow-Origin', '*')
+                return response
             except Exception as e:
                 print(f"隨機回應翻譯失敗: {e}")
-                return jsonify([random_response])
+                response = jsonify([random_response])
+                response.headers.add('Access-Control-Allow-Origin', '*')
+                return response
                 
         except Exception as e:
             print(f"隨機選擇回應失敗: {e}")
-            return jsonify([])  # 返回空列表作為最後手段
+            response = jsonify([])
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response  # 返回空列表作為最後手段
 
-@app.route('/api/languages', methods=['GET'])
+@app.route('/api/languages', methods=['GET', 'OPTIONS'])
 def get_languages():
+    # 處理預檢請求
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        return response
+        
     # 獲取所有可用的語言
     languages = set()
     for item in chatbot_data:
@@ -496,10 +523,20 @@ def get_languages():
     # 確保"自動檢測"選項可用
     languages.add("auto")
     
-    return jsonify(sorted(list(languages)))
+    response = jsonify(sorted(list(languages)))
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
-@app.route('/api/search_diagnostic', methods=['GET'])
+@app.route('/api/search_diagnostic', methods=['GET', 'OPTIONS'])
 def search_diagnostic():
+    # 處理預檢請求
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        return response
+        
     query = request.args.get('query', 'hello').lower()
     limit = int(request.args.get('limit', 10))
     
@@ -512,12 +549,15 @@ def search_diagnostic():
     # 基於語意匹配的診斷
     semantic_matches = find_semantic_matches(query, None, limit)
     
-    return jsonify({
+    response = jsonify({
         'query': query,
         'detected_language': detected_lang,
         'translated_query': translated_query,
         'semantic_matches': [{'prompt': item['prompt'], 'language': item.get('language', ''), 'score': item.get('score', 0)} for item in semantic_matches]
     })
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
