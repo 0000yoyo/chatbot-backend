@@ -10,8 +10,8 @@ app = Flask(__name__)
 CORS(app)  # 允許跨域請求
 
 # 設定 JSON 檔案路徑
-JSON_FILE_PATH = r"C:\Users\Henry\Desktop\test\chatbot-backend\output.json"
-
+#JSON_FILE_PATH = r"C:\Users\Henry\Desktop\test\chatbot-backend\output.json"
+JSON_FILE_PATH = os.path.join(os.path.dirname(__file__), "output.json")
 # 載入 JSON 資料
 def load_data():
     try:
