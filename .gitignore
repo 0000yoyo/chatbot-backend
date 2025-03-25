@@ -1,7 +1,7 @@
-# Python 臨時檔案
+# Python 編譯檔案
 __pycache__/
 *.py[cod]
-*$py.class
+*.py.class
 
 # 虛擬環境
 venv/
@@ -14,3 +14,6 @@ chatbot.db
 # 作業系統臨時檔案
 .DS_Store
 Thumbs.db
+
+# 確保 Git LFS 追蹤的大型檔案不被忽略
+!output.json
